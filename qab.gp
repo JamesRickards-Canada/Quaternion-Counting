@@ -2,6 +2,10 @@
 \\addhelp(qab, "This package is for testing optimizing (a, b) in a quaternion algebra.\n For each subtopic ``P (p)'', call ?p to access a basic description and list of methods. Subtopics:\n ");
 
 \\BASIC METHODS
+	install(ab_disc,"GD0,G,",,"./libqab.so");
+	addhelp(ab_disc,"Inputs a, b.\n Returns the discriminant of the quaternion algebra (a,b/Q). We can input a as [a,b], and can pass in the factorizations of a and/or b instead.");
+	install(ab_ramprimes,"GD0,G,",,"./libqab.so");
+	addhelp(ab_ramprimes,"Inputs a, b.\n Returns the set of finite primes ramifying in the quaternion algebra (a,b/Q). We can input a as [a,b], and can pass in the factorizations of a and/or b instead.");
 	install(algabfromram,"GGG",,"./libqab.so");
 	addhelp(algabfromram,"Input F, D, infram.\n Returns a pair (a, b) such that (a, b/F) is a quaternion algebra with N_(F/Q)(disc)=D and infinite ramification specified by the length [F:Q] vector infram (0=unram, 1=ram), if it exists. Otherwise, returns 0. If there are multiple such algebras, we only return one of them.");
 	install(alggetab,"G",,"./libqab.so");\

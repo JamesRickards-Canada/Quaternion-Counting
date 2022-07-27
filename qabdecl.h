@@ -1,4 +1,6 @@
 //BASIC METHODS
+GEN ab_disc(GEN a, GEN b);
+GEN ab_ramprimes(GEN a, GEN b);
 GEN algabfromram(GEN F, GEN D, GEN infram);
 GEN alggetab(GEN A);
 GEN algnormdisc(GEN A);

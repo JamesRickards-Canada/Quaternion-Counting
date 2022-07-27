@@ -20,11 +20,49 @@ static GEN alg_count_Q_worker(GEN founddef, GEN foundindef, long N1, long N2, lo
 
 //BASIC METHODS
 
-//Given (a, b), returns the set of ramifying primes. a and b can be factored, and we can also pass in [a, b] for a instead.
-GEN ab_ramprimes(GEN a, GEN b){
+//Given (a, b), returns the discriminant of (a,b/Q). a and b can be factored, and we can also pass in [a, b] for a instead.
+GEN ab_disc(GEN a, GEN b){
   pari_sp top=avma;
+  if(typ(a)==t_VEC){b=gel(a, 2);a=gel(a, 1);}
+  GEN afact, bfact;
+  if(typ(a)==t_INT) afact=Z_factor(a);
+  else{afact=a;a=factorback(afact);}
+  if(typ(b)==t_INT) bfact=Z_factor(b);
+  else{bfact=b;b=factorback(bfact);}
+  GEN plist=ZV_sort_uniq(shallowconcat(gel(afact, 1), gel(bfact, 1)));//May be missing 2, and may include -1
+  GEN disc=gen_1;
+  if(hilbert(a, b, gen_2)==-1) disc=gen_2;
+  long ind=1;
+  while(lg(plist)>ind && cmpis(gel(plist, ind), 2)<=0) ind++;//Skipping -1 and 2
+  while(ind<lg(plist)){
+	GEN p=gel(plist, ind);
+	if(hilbert(a, b, p)==-1) disc=mulii(disc, p);
+    ind++;	
+  }
+  return gerepilecopy(top, disc);
 }
 
+//Given (a, b), returns the set of ramifying primes in (a,b/Q). a and b can be factored, and we can also pass in [a, b] for a instead.
+GEN ab_ramprimes(GEN a, GEN b){
+  pari_sp top=avma;
+  if(typ(a)==t_VEC){b=gel(a, 2);a=gel(a, 1);}
+  GEN afact, bfact;
+  if(typ(a)==t_INT) afact=Z_factor(a);
+  else{afact=a;a=factorback(afact);}
+  if(typ(b)==t_INT) bfact=Z_factor(b);
+  else{bfact=b;b=factorback(bfact);}
+  GEN plist=ZV_sort_uniq(shallowconcat(gel(afact, 1), gel(bfact, 1)));//May be missing 2, and may include -1
+  GEN rprimes=vectrunc_init(lg(plist)+1);
+  if(hilbert(a, b, gen_2)==-1) vectrunc_append(rprimes, gen_2);
+  long ind=1;
+  while(lg(plist)>ind && cmpis(gel(plist, ind), 2)<=0) ind++;//Skipping -1 and 2
+  while(ind<lg(plist)){
+	GEN p=gel(plist, ind);
+	if(hilbert(a, b, p)==-1) vectrunc_append(rprimes, p);
+    ind++;	
+  }
+  return gerepilecopy(top, rprimes);
+}
 
 //Returns (a, b) such that A=(a,b/F) has |N_{F/Q}(discriminant)|=D and infinite ramification prescribed by infram (a length [F:Q] vector of 0's/1's), if it exists. If it does not, this returns 0. If F!=Q, then there may be multiple choices for the primes ramifying. This picks the first one possible (when we factorize p).
 GEN algabfromram(GEN F, GEN D, GEN infram){
