@@ -20,6 +20,12 @@ static GEN alg_count_Q_worker(GEN founddef, GEN foundindef, long N1, long N2, lo
 
 //BASIC METHODS
 
+//Given (a, b), returns the set of ramifying primes. a and b can be factored, and we can also pass in [a, b] for a instead.
+GEN ab_ramprimes(GEN a, GEN b){
+  pari_sp top=avma;
+}
+
+
 //Returns (a, b) such that A=(a,b/F) has |N_{F/Q}(discriminant)|=D and infinite ramification prescribed by infram (a length [F:Q] vector of 0's/1's), if it exists. If it does not, this returns 0. If F!=Q, then there may be multiple choices for the primes ramifying. This picks the first one possible (when we factorize p).
 GEN algabfromram(GEN F, GEN D, GEN infram){
   pari_sp top=avma;

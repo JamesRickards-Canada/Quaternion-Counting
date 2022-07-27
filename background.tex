@@ -1,0 +1,81 @@
+\documentclass[10pt]{amsart}
+
+%Packages
+\usepackage{amssymb, dsfont} %Math symbols
+\usepackage{fullpage, graphicx} %Formatting
+\usepackage{hyperref} %Clickable links
+\usepackage{enumitem} %Enumerate options
+\usepackage{url} %For urls
+
+%Formatting
+\linespread{1.3}
+\frenchspacing
+\hypersetup{colorlinks=true, urlcolor=purple, citecolor=blue, linkcolor=red, pdfstartview={XYZ null null 0.90}}
+
+%Macros
+\DeclareMathOperator{\Mat}{Mat}
+\DeclareMathOperator{\nrd}{nrd}
+\DeclareMathOperator{\Pl}{Pl}
+\DeclareMathOperator{\PSL}{PSL}
+\newcommand{\ZZ}{\ensuremath{\mathbb{Z}}}
+\newcommand{\RR}{\ensuremath{\mathbb{R}}}
+\newcommand{\CC}{\ensuremath{\mathbb{C}}}
+\newcommand{\QQ}{\ensuremath{\mathbb{Q}}}
+\newcommand{\Ord}{\ensuremath{\mathrm{O}}}
+\newcommand{\qa}[2]{\ensuremath{\left(\frac{#1, #2}{\QQ}\right)}}%Small 2x2 matrix
+
+%Theorems
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+
+\theoremstyle{definition}
+\newtheorem{algorithm}[theorem]{Algorithm}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{analogy}[theorem]{Analogy}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{heuristic}[theorem]{Heuristic}
+\newtheorem{observation}[theorem]{Observation}
+
+\numberwithin{equation}{section}
+
+\begin{document}
+	
+	%Document Info
+	\title{Counting quaternion algebras}
+	\author[J. Rickards]{James Rickards}
+	\address{CU Boulder, Boulder, Colorado, USA}
+	\email{james.rickards@colorado.edu}
+	\urladdr{https://math.colorado.edu/~jari2770/}
+	\date{\today}
+	\maketitle
+	
+	Let $a,b\in\ZZ^{\neq 0}$, and consider $A=\qa{a}{b}$, the quaternion algebra over $\QQ$ with basis $1,i,j,k$ where $i^2=a$, $j^2=b$, $k=ij=-ji$. This is ramified at a finite, even sized set of places. The discriminant of the algebra is the product of the finite places. Every squarefree positive integer is the discriminant of some quaternion algebra, and two algerbras are isomorphic if and only if they have the same discriminant.
+	
+	\begin{definition}
+		Let $N$ be a positive integer. Define $D(N)$ to be the number of isomorphism classes of definite quaternion algebras $\qa{a}{b}$ with $a$ and $b$ integers satisfying $0<|a|,|b|\leq N$. Define $I(N)$ to be the analogous count for indefinite quaternion algebras.
+	\end{definition}
+
+Na\"{i}vely, we have $D(N)\leq N^2$ and $I(N)\leq 3N^2$, since the algebra is definite if and only if $a,b<0$.
+
+In order to find the finite ramifying primes, we have the following result.
+
+\begin{proposition}
+	Let $p$ be prime. Then the quaternion algebra $\qa{a}{b}$ is ramified at $p$ if and only if the Hilbert symbol $(a,b)_p$ is $-1$.
+\end{proposition}
+
+It suffices to check the Hilbert symbol for all primes $p\mid 2ab$, since it is $1$ for all other primes.
+
+Based on the data, we have the following conjecture.
+
+\begin{conjecture}
+	As $N\rightarrow\infty$, we have
+	\[D(N)\sim C_1 N^2,\qquad I(N)\sim C_2N^2,\]
+	for some constants $C_1,C_2$. Furthermore, it appears that $C_2/C_1=\pi^2/6$.
+\end{conjecture}
+	
+By counting how often a fixed prime ramifies in a random quaternion algebra from our set, we may be able to produce a heuristic that predicts $C_1,C_2$.
+
+\end{document}
