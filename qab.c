@@ -130,43 +130,42 @@ GEN algramifiedplacesf(GEN A){
 
 //Counts the number of new and distinct algebras (a,b/Q) with N1<=max(|a|,|b|)<=N2. Returns [founddef, foundindef, defcount, indefcount], where each entry is a length N2-N1+1 vecsmall, the ith entry representing the number of algebras with max(|a|,|b|)=N1+i-1. This is not stack clean, and we update the reference to olddiscs, so make sure that the passed olddiscs can be changed.
 static GEN alg_count_Q_worker(GEN founddef, GEN foundindef, long N1, long N2, long prec){
-  GEN Q=nfinit(pol_x(1), prec);//rational numbers
   pari_sp av=avma;//found(in)def tracks the algebras found
   long ldef=lg(founddef), lindef=lg(foundindef), lN=N2-N1+1;//Tracks the number of algebras found
   GEN countdef=vecsmall_ei(lN, 1), countindef=vecsmall_ei(lN, 1);//Number of new algebras for each N1<=n<=N2
-  if(N1>1) countindef[1]=0;//If N1=1, we start with M(2, Q), else we start with no algebras.
-  countdef[1]=0;//a=1 only corresponds to M_2(Q), so we start this count at 1.
+  countindef[1]=0;
+  countdef[1]=0;
   long aind=0;
   for(long a=N1;a<=N2;a++){//we do -a first, then a
     aind++;
     if(a%20==0) pari_printf("a=%d done\n", a);
     if(gc_needed(av, 1)) gerepileall(av, 4, &founddef, &foundindef, &countdef, &countindef);
+	if(!uissquarefree(a)) continue;//WLOG squarefree
     GEN aval=stoi(-a);
     for(long b=1;b<=a;b++){//We do -b first, then b
+	  if(!uissquarefree(b)) continue;//WLOG squarefree
       GEN bval=stoi(-b);
-      GEN disc=algnormdisc(alginit(Q, mkvec2(aval, bval), 0, 0));
+      GEN disc=ab_disc(aval, bval);
       founddef=setunion_i(founddef, mkvec(disc));
       if(lg(founddef)>ldef){ldef++;countdef[aind]++;}
-      if(uissquare(b)) continue;//b is square, no need to do it.
       bval=stoi(b);
-      disc=algnormdisc(alginit(Q, mkvec2(aval, bval), 0, 0));
+      disc=ab_disc(aval, bval);
       foundindef=setunion_i(foundindef, mkvec(disc));
       if(lg(foundindef)>lindef){lindef++;countindef[aind]++;}
     }
-    if(uissquare(a)) continue;//a is square, no need to do it.
     aval=stoi(a);
     for(long b=1;b<a;b++){//We do -b first, then b. We do a=b at the end, since we don't need to redo the cases (a, -a) and (-a, a)
-      GEN bval=stoi(-b);
-      GEN disc=algnormdisc(alginit(Q, mkvec2(aval, bval), 0, 0));
+      if(!uissquarefree(b)) continue;//WLOG squarefree
+	  GEN bval=stoi(-b);
+      GEN disc=ab_disc(aval, bval);
       foundindef=setunion_i(foundindef, mkvec(disc));
       if(lg(foundindef)>lindef){lindef++;countindef[aind]++;}
-      if(uissquare(b)) continue;//b is square, no need to do it.
       bval=stoi(b);
-      disc=algnormdisc(alginit(Q, mkvec2(aval, bval), 0, 0));
+      disc=ab_disc(aval, bval);
       foundindef=setunion_i(foundindef, mkvec(disc));
       if(lg(foundindef)>lindef){lindef++;countindef[aind]++;}
     }
-    GEN disc=algnormdisc(alginit(Q, mkvec2(aval, aval), 0, 0));//a=b
+    GEN disc=ab_disc(aval, aval);//a=b
     foundindef=setunion_i(foundindef, mkvec(disc));
     if(lg(foundindef)>lindef){lindef++;countindef[aind]++;}
   }
@@ -176,7 +175,7 @@ static GEN alg_count_Q_worker(GEN founddef, GEN foundindef, long N1, long N2, lo
 //Counts the number of distinct algebras (a,b/Q) with max(|a|,|b|)<=N. Returns [defcount, indefcount], where each entry is a length N vecsmall, the ith entry representing the number of algebras with max(|a|,|b|)=N.
 GEN alg_count_Q(long N, long prec){
   pari_sp top=avma;
-  GEN dat=alg_count_Q_worker(cgetg(1, t_VEC), mkvec(gen_1), 1, N, prec);
+  GEN dat=alg_count_Q_worker(cgetg(1, t_VEC), cgetg(1, t_VEC), 1, N, prec);
   return gerepilecopy(top, mkvec2(gel(dat, 3), gel(dat, 4)));
 }
 
@@ -204,7 +203,7 @@ GEN alg_count_Q_tofile(long N, char *fname, long prec){
   }
   char *fullfile=stack_sprintf("data/%s.dat", fname);
   FILE *f=fopen(fullfile, "w");//Now we have created the output file f.
-  GEN dat=alg_count_Q_worker(cgetg(1, t_VEC), mkvec(gen_1), 1, N, prec);
+  GEN dat=alg_count_Q_worker(cgetg(1, t_VEC), cgetg(1, t_VEC), 1, N, prec);
   pari_fprintf(f, "%d\n%Ps\n%Ps\n%Ps\n%Ps\n", N, gel(dat, 1), gel(dat, 2), gel(dat, 3), gel(dat, 4));
   fclose(f);
   return gerepilecopy(top, dat);
