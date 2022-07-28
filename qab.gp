@@ -21,10 +21,10 @@
 \\COUNTING ALGEBRAS
 	install(alg_count_Q,"Up",,"./libqab.so");
 	addhelp(alg_count_Q,"Input N, a postive integer.\n Counts the number of distinct algebras (a,b/Q) with max(|a|,|b|)<=N. Returns [defcount, indefcount], where each entry is a length N vecsmall, the ith entry representing the number of algebras with max(|a|,|b|)=N.");
-	install(alg_count_Q_append,"Lssp",,"./libqab.so");
-	addhelp(alg_count_Q_append,"Inputs N, oldfname, newfname.\n Does alg_count_Q, returning [founddef, foundindef, countdef, countindef], as well as writing these to the file data/newfname.dat. We assume that the file data/oldfname.dat already includes partial computations, i.e. for a smaller N.");
-	install(alg_count_Q_tofile,"Lsp",,"./libqab.so");
-	addhelp(alg_count_Q_tofile,"Inputs N, fname.\n Does alg_count_Q, returning [founddef, foundindef, countdef, countindef], as well as writing these to the file data/fname.dat.");
+	install(alg_count_Q_append,"vUssp",,"./libqab.so");
+	addhelp(alg_count_Q_append,"Inputs N, oldfname, newfname.\n Does alg_count_Q, finding and writing [founddef, foundindef, countdef, countindef] to the file data/newfname.dat. We assume that the file data/oldfname.dat already includes partial computations, i.e. for a smaller N.");
+	install(alg_count_Q_tofile,"vUsp",,"./libqab.so");
+	addhelp(alg_count_Q_tofile,"Inputs N, fname.\n Does alg_count_Q, finding and writing [founddef, foundindef, countdef, countindef] to the file data/fname.dat.");
 
 \\VISUAL
 	\\Files from another project, just comment them out if needed

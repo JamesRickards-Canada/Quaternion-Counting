@@ -10,5 +10,5 @@ long hilbertss(long x, long y, ulong p);
 //COUNTING ALGEBRAS
 
 GEN alg_count_Q(ulong N, long prec);
-GEN alg_count_Q_append(long N, char *oldfname, char *newfname, long prec);
-GEN alg_count_Q_tofile(long N, char *fname, long prec);
+void alg_count_Q_append(ulong N, char *oldfname, char *newfname, long prec);
+void alg_count_Q_tofile(ulong N, char *fname, long prec);
