@@ -14,9 +14,12 @@
 	addhelp(algnormdisc,"Input A, an algebra.\n Returns the norm to Q of the discriminant of A.");
 	install(algramifiedplacesf,"G","algramifiedplacesf","./libqab.so");
 	addhelp(algramifiedplacesf,"Input A, an algebra.\n Returns the vector of finite places that ramify.");
+	install(hilbertss,"lLLU",,"./libqab.so");
+	addhelp(hilbertss,"Inputs x, y, p with p>0.\n Returns the Hilbert symbol (x, y)_p, where x and y are longs, and p is a ulong.");
+
 
 \\COUNTING ALGEBRAS
-	install(alg_count_Q,"Lp",,"./libqab.so");
+	install(alg_count_Q,"Up",,"./libqab.so");
 	addhelp(alg_count_Q,"Input N, a postive integer.\n Counts the number of distinct algebras (a,b/Q) with max(|a|,|b|)<=N. Returns [defcount, indefcount], where each entry is a length N vecsmall, the ith entry representing the number of algebras with max(|a|,|b|)=N.");
 	install(alg_count_Q_append,"Lssp",,"./libqab.so");
 	addhelp(alg_count_Q_append,"Inputs N, oldfname, newfname.\n Does alg_count_Q, returning [founddef, foundindef, countdef, countindef], as well as writing these to the file data/newfname.dat. We assume that the file data/oldfname.dat already includes partial computations, i.e. for a smaller N.");

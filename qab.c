@@ -14,7 +14,10 @@
 #endif
 
 //STATIC DECLARATIONS
+static ulong ab_discu(long a, long b, GEN apdivs, GEN bpdivs);
+static int gomel(long t);
 static GEN alg_count_Q_worker(GEN founddef, GEN foundindef, long N1, long N2, long prec);
+static GEN alg_count_Q_hash(GEN founddef, GEN foundindef, ulong N1, ulong N2, long prec);
 
 //FUNCTIONS
 
@@ -40,6 +43,31 @@ GEN ab_disc(GEN a, GEN b){
     ind++;	
   }
   return gerepilecopy(top, disc);
+}
+
+//Returns the discriminant of (a,b/Q). apdivs and bpdivs are vecsmalls of the prime divisors
+static ulong ab_discu(long a, long b, GEN apdivs, GEN bpdivs){
+  ulong disc=1;
+  long aind=1, bind=1, la=lg(apdivs), lb=lg(bpdivs);
+  while(aind<la && bind<lb){//Loop through until we run of of primes from either a or b.
+	ulong p1=apdivs[aind], p2=bpdivs[bind];
+	ulong p=(p1>p2) ? p2:p1;//p=min(p1, p2)
+	if(hilbertss(a, b, p)==-1) disc=disc*p;
+	if(p==p1) aind++;
+	if(p==p2) bind++;
+  }
+  while(aind<la){//More primes in a to check
+    ulong p=apdivs[aind];
+	if(hilbertss(a, b, p)==-1) disc=disc*p;
+	aind++;
+  }
+  while(bind<lb){//More primes in b to check
+    ulong p=bpdivs[bind];
+	if(hilbertss(a, b, p)==-1) disc=disc*p;
+	bind++;
+  }
+  if((a&1) && (b&1) && hilbertss(a, b, 2)==-1) disc=disc*2;//2 ramification when a and b are odd.
+  return disc;//No garbage!!
 }
 
 //Given (a, b), returns the set of ramifying primes in (a,b/Q). a and b can be factored, and we can also pass in [a, b] for a instead.
@@ -124,6 +152,39 @@ GEN algramifiedplacesf(GEN A){
   return gerepilecopy(top, rp);
 }
 
+/* t a t_INT, is t = 3,5 mod 8 ? */
+static int gomel(long t){
+  if(t==0) return 0;
+  if(t<0) t=-t;
+  switch(t&7){//t mod 8
+    case 3:
+    case 5: return 1;
+    default: return 0;
+  }
+}
+
+//Adapted from hilbertii.
+long hilbertss(long x, long y, ulong p){
+  pari_sp top=avma;
+  if(x==0 || y==0) return 0;
+  if(p==1) pari_err_PRIME("hilbertii", stoi(p));
+  long xrem, yrem, z;
+  long oddvx=odd(z_lvalrem(x, p, &xrem));
+  long oddvy=odd(z_lvalrem(y, p, &yrem));
+  if(p==2){/* x, y are p-units, compute hilbert(xrem * p^oddvx, yrem * p^oddvy, p) */
+    z=((xrem&3)==3 && (yrem&3)==3)? -1: 1;
+    if(oddvx && gomel(yrem)) z=-z;
+    if(oddvy && gomel(xrem)) z=-z;
+  }
+  else{
+    z=(oddvx && oddvy && (p&3)==3)? -1: 1;
+    if(oddvx && kross(yrem, p)<0) z=-z;
+    if(oddvy && kross(xrem, p)<0) z=-z;
+  }
+  return gc_long(top, z);
+}
+
+
 
 //COUNTING ALGEBRAS
 
@@ -173,9 +234,9 @@ static GEN alg_count_Q_worker(GEN founddef, GEN foundindef, long N1, long N2, lo
 }
 
 //Counts the number of distinct algebras (a,b/Q) with max(|a|,|b|)<=N. Returns [defcount, indefcount], where each entry is a length N vecsmall, the ith entry representing the number of algebras with max(|a|,|b|)=N.
-GEN alg_count_Q(long N, long prec){
+GEN alg_count_Q(ulong N, long prec){
   pari_sp top=avma;
-  GEN dat=alg_count_Q_worker(cgetg(1, t_VEC), cgetg(1, t_VEC), 1, N, prec);
+  GEN dat=alg_count_Q_hash(cgetg(1, t_VECSMALL), cgetg(1, t_VECSMALL), 1, N, prec);
   return gerepilecopy(top, mkvec2(gel(dat, 3), gel(dat, 4)));
 }
 
@@ -210,6 +271,53 @@ GEN alg_count_Q_tofile(long N, char *fname, long prec){
 }
 
 
+
+//Counts the number of new and distinct algebras (a,b/Q) with N1<=max(|a|,|b|)<=N2. Returns [founddef, foundindef, defcount, indefcount], where each entry is a length N2-N1+1 vecsmall, the ith entry representing the number of algebras with max(|a|,|b|)=N1+i-1. This is not stack clean, and we update the reference to olddiscs, so make sure that the passed olddiscs can be changed.
+
+static GEN alg_count_Q_hash(GEN founddef, GEN foundindef, ulong N1, ulong N2, long prec){
+  long ldef=lg(founddef), lindef=lg(foundindef), lN=N2-N1+1;//Tracks the number of algebras found as Vecsmalls
+  hashtable *hdef=hash_create_ulong(100, 1);//Make the hashtable using the stack. For definite discriminants
+  hashtable *hindef=hash_create_ulong(100, 1);//For indefinite discriminants
+  for(long i=1;i<ldef;i++) hash_insert(hdef, (void *)founddef[i], NULL);//Inserting the found discriminants into our hash
+  for(long i=1;i<lindef;i++) hash_insert(hdef, (void *)foundindef[i], NULL);
+  GEN facts=vecfactorsquarefreeu(N1, N2);//Find prime divisors of all numbers between N1 and N2.
+  GEN countdef=zero_zv(lN), countindef=zero_zv(lN);//Number of new algebras for each N1<=n<=N2
+  long aind=0;
+  for(long a=N1;a<=N2;a++){//we do -a first, then a
+    aind++;
+    if(a%100==0) pari_printf("a=%d done\n", a);
+	GEN apdivs=gel(facts, aind);
+	if(!apdivs) continue;//WLOG squarefree
+    for(long b=1;b<=a;b++){//We do -b first, then b
+	  GEN bpdivs=gel(facts, b);
+	  if(!bpdivs) continue;//WLOG squarefree
+      ulong disc=ab_discu(-a, -b, apdivs, bpdivs);
+	  if(!hash_search(hdef, (void *)disc)){//New disc!
+		countdef[aind]++;
+		hash_insert(hdef, (void *)disc, NULL);
+	  }
+      disc=ab_discu(-a, b, apdivs, bpdivs);
+      if(!hash_search(hindef, (void *)disc)){//New disc!
+		countindef[aind]++;
+		hash_insert(hindef, (void *)disc, NULL);
+	  }
+	  disc=ab_discu(a, b, apdivs, bpdivs);
+      if(!hash_search(hindef, (void *)disc)){//New disc!
+		countindef[aind]++;
+		hash_insert(hindef, (void *)disc, NULL);
+	  }
+	  if(a==b) continue;//If a=b, (a,-b) and (-a,b) give the same algebra.
+	  disc=ab_discu(a, -b, apdivs, bpdivs);
+      if(!hash_search(hindef, (void *)disc)){//New disc!
+		countindef[aind]++;
+		hash_insert(hindef, (void *)disc, NULL);
+	  }
+    }
+  }
+  hash_destroy(hdef);
+  hash_destroy(hindef);
+  return mkvec4(gen_0, gen_0, countdef, countindef);
+}
 
 //Returns a better pair (a, b).
 //GEN algbetterab_Q(GEN ab){
