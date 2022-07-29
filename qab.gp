@@ -33,7 +33,8 @@
 \\OTHER METHODS
 	install(veccumu,"G",,"./libqab.so");
 	addhelp(veccumu,"Input v, a vector/vecsmall.\n Returns w, where w[i]=v[1]+v[2]+...+v[i].");
-
+	install(writevecs,"vGs",,"./libqab.so");
+	addhelp(writevecs,"Inputs v, fname.\n Writes v to data/fname.dat, one entry per row. v can also be a vector of vectors/vecsmalls, all of the same type and length. In this case, each row contains v[1][i], v[2][i], ..., v[n][i] separated by spaces.");
 
 
 \\visual.c

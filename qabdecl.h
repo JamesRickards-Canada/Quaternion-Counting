@@ -16,7 +16,7 @@ void alg_count_Q_tofile(ulong N, char *fname);
 
 //OTHER METHODS
 GEN veccumu(GEN v);
-
+void writevecs(GEN v, char *fname);
 
 
 //visual.c

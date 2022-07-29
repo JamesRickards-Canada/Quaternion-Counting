@@ -350,3 +350,38 @@ GEN veccumu(GEN v){
   }
   return w;
 }
+
+//Write v to data/fname.dat, one entry per line. If v is a vector of vectors/vecsmalls, assume they are all the same length AND type, and writes them in columns separated by spaces
+void writevecs(GEN v, char *fname){
+  long t=typ(v), lv=lg(v);
+  if(lv==1) return;
+  if(!pari_is_dir("data")){
+    int s=system("mkdir -p data");
+    if(s==-1) pari_err(e_MISC, "ERROR CREATING DIRECTORY data");
+  }
+  char *fullfile=stack_sprintf("data/%s.dat", fname);
+  FILE *f=fopen(fullfile, "w");//Now we have created the output file f.
+  if(t==t_VECSMALL){
+	for(long i=1;i<lv;i++) pari_fprintf(f, "%d\n", v[i]);
+  }
+  else{//Vector
+	t=typ(gel(v, 1));
+	if(t==t_VECSMALL){
+	  for(long i=1;i<lg(gel(v, 1));i++){
+		for(long j=1;j<lv-1;j++) pari_fprintf(f, "%d ", gel(v, j)[i]);
+		pari_fprintf(f, "%d\n", gel(v, lv-1)[i]);
+	  }
+	}
+	else if(t==t_VEC){
+	  for(long i=1;i<lg(gel(v, 1));i++){
+		for(long j=1;j<lv-1;j++) pari_fprintf(f, "%Ps ", gmael(v, j, i));
+		pari_fprintf(f, "%Ps\n", gmael(v, lv-1, i));
+	  }
+	}
+	else{
+	  for(long i=1;i<lv;i++) pari_fprintf(f, "%Ps\n", gel(v, i));
+	}
+  }
+  fclose(f);
+}
+
