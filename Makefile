@@ -2,7 +2,7 @@
 PARI_LIB = /usr/local/lib
 PARI_INCLUDE = /usr/local/include
 
-SRCS = qab.o
+SRCS = qab.o visual.o
 OBJS = $(SRCS)
 
 TARGET = qab
