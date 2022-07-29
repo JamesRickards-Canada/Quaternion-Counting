@@ -38,9 +38,9 @@ GEN ab_disc(GEN a, GEN b){
   long ind=1;
   while(lg(plist)>ind && cmpis(gel(plist, ind), 2)<=0) ind++;//Skipping -1 and 2
   while(ind<lg(plist)){
-	GEN p=gel(plist, ind);
-	if(hilbert(a, b, p)==-1) disc=mulii(disc, p);
-    ind++;	
+    GEN p=gel(plist, ind);
+    if(hilbert(a, b, p)==-1) disc=mulii(disc, p);
+    ind++;  
   }
   return gerepilecopy(top, disc);
 }
@@ -50,21 +50,21 @@ static ulong ab_discu(long a, long b, GEN apdivs, GEN bpdivs){
   ulong disc=1;
   long aind=1, bind=1, la=lg(apdivs), lb=lg(bpdivs);
   while(aind<la && bind<lb){//Loop through until we run of of primes from either a or b.
-	ulong p1=apdivs[aind], p2=bpdivs[bind];
-	ulong p=(p1>p2) ? p2:p1;//p=min(p1, p2)
-	if(hilbertss(a, b, p)==-1) disc=disc*p;
-	if(p==p1) aind++;
-	if(p==p2) bind++;
+    ulong p1=apdivs[aind], p2=bpdivs[bind];
+    ulong p=(p1>p2) ? p2:p1;//p=min(p1, p2)
+    if(hilbertss(a, b, p)==-1) disc=disc*p;
+    if(p==p1) aind++;
+    if(p==p2) bind++;
   }
   while(aind<la){//More primes in a to check
     ulong p=apdivs[aind];
-	if(hilbertss(a, b, p)==-1) disc=disc*p;
-	aind++;
+    if(hilbertss(a, b, p)==-1) disc=disc*p;
+    aind++;
   }
   while(bind<lb){//More primes in b to check
     ulong p=bpdivs[bind];
-	if(hilbertss(a, b, p)==-1) disc=disc*p;
-	bind++;
+    if(hilbertss(a, b, p)==-1) disc=disc*p;
+    bind++;
   }
   if((a&1) && (b&1) && hilbertss(a, b, 2)==-1) disc=disc*2;//2 ramification when a and b are odd.
   return disc;//No garbage!!
@@ -85,9 +85,9 @@ GEN ab_ramprimes(GEN a, GEN b){
   long ind=1;
   while(lg(plist)>ind && cmpis(gel(plist, ind), 2)<=0) ind++;//Skipping -1 and 2
   while(ind<lg(plist)){
-	GEN p=gel(plist, ind);
-	if(hilbert(a, b, p)==-1) vectrunc_append(rprimes, p);
-    ind++;	
+    GEN p=gel(plist, ind);
+    if(hilbert(a, b, p)==-1) vectrunc_append(rprimes, p);
+    ind++;  
   }
   return gerepilecopy(top, rprimes);
 }
@@ -184,6 +184,19 @@ long hilbertss(long x, long y, ulong p){
   return gc_long(top, z);
 }
 
+//vecsquarefreeu, but splits the return into [def, indef] (each entry a vecsmall).
+GEN vecsquarefreeu_split(ulong a, ulong b){
+  pari_sp top=avma;
+  GEN all=vecfactorsquarefreeu(a, b);
+  long lgall=lg(all);
+  GEN def=vecsmalltrunc_init(lgall), indef=vecsmalltrunc_init(lgall);
+  for(long i=1;i<lgall;i++){
+	if(!gel(all, i)) continue;
+	if(lg(gel(all, i))%2==0) vecsmalltrunc_append(def, a+i-1);//Odd number of prime divisors, definite
+	else vecsmalltrunc_append(indef, a+i-1);
+  }
+  return gerepilecopy(top, mkvec2(def, indef));
+}
 
 
 //COUNTING ALGEBRAS
@@ -222,22 +235,22 @@ static GEN alg_count_alg_worker(GEN disc, ulong N1, ulong N2){
   for(long i=1;i<lgdisc;i++) gel(countset, i)=zero_zv(lN);
   GEN facts=vecfactorsquarefreeu(1, N2);//Find prime divisors of all numbers between 1 and N.
   for(long a=N1;a<=N2;a++){
-	aind++;
+    aind++;
     if(a%100==0) pari_printf("a=%d done\n", a);
     GEN apdivs=gel(facts, a);
     if(!apdivs) continue;//WLOG squarefree
     for(long b=1;b<=a;b++){
-	  GEN bpdivs=gel(facts, b);
-	  if(!bpdivs) continue;//WLOG squarefree
+      GEN bpdivs=gel(facts, b);
+      if(!bpdivs) continue;//WLOG squarefree
       ulong foundd=ab_discu(-a, -b, apdivs, bpdivs);
-	  for(long i=1;i<lgdisc;i++){if(foundd==disc[i]){gel(countset, i)[aind]++;break;}}
+      for(long i=1;i<lgdisc;i++){if(foundd==disc[i]){gel(countset, i)[aind]++;break;}}
       foundd=ab_discu(a, -b, apdivs, bpdivs);
       for(long i=1;i<lgdisc;i++){if(foundd==disc[i]){gel(countset, i)[aind]++;break;}}
-	  foundd=ab_discu(a, b, apdivs, bpdivs);
-	  for(long i=1;i<lgdisc;i++){if(foundd==disc[i]){gel(countset, i)[aind]++;break;}}
-	  if(a==b) continue;
-	  foundd=ab_discu(-a, b, apdivs, bpdivs);
-	  for(long i=1;i<lgdisc;i++){if(foundd==disc[i]){gel(countset, i)[aind]++;break;}}
+      foundd=ab_discu(a, b, apdivs, bpdivs);
+      for(long i=1;i<lgdisc;i++){if(foundd==disc[i]){gel(countset, i)[aind]++;break;}}
+      if(a==b) continue;
+      foundd=ab_discu(-a, b, apdivs, bpdivs);
+      for(long i=1;i<lgdisc;i++){if(foundd==disc[i]){gel(countset, i)[aind]++;break;}}
     }
   }
   if(!isvec) return gel(countset, 1);
@@ -257,32 +270,32 @@ static GEN alg_count_Q_hash(GEN founddef, GEN foundindef, ulong N1, ulong N2){
   for(long a=N1;a<=N2;a++){//we do -a first, then a
     aind++;
     if(a%100==0) pari_printf("a=%d done\n", a);
-	GEN apdivs=gel(facts, a);
-	if(!apdivs) continue;//WLOG squarefree
+    GEN apdivs=gel(facts, a);
+    if(!apdivs) continue;//WLOG squarefree
     for(long b=1;b<=a;b++){//We do -b first, then b
-	  GEN bpdivs=gel(facts, b);
-	  if(!bpdivs) continue;//WLOG squarefree
+      GEN bpdivs=gel(facts, b);
+      if(!bpdivs) continue;//WLOG squarefree
       ulong disc=ab_discu(-a, -b, apdivs, bpdivs);
-	  if(!hash_search(hdef, (void *)disc)){//New disc!
-		countdef[aind]++;
-		hash_insert(hdef, (void *)disc, NULL);
-	  }
+      if(!hash_search(hdef, (void *)disc)){//New disc!
+        countdef[aind]++;
+        hash_insert(hdef, (void *)disc, NULL);
+      }
       disc=ab_discu(-a, b, apdivs, bpdivs);
       if(!hash_search(hindef, (void *)disc)){//New disc!
-		countindef[aind]++;
-		hash_insert(hindef, (void *)disc, NULL);
-	  }
-	  disc=ab_discu(a, b, apdivs, bpdivs);
+        countindef[aind]++;
+        hash_insert(hindef, (void *)disc, NULL);
+      }
+      disc=ab_discu(a, b, apdivs, bpdivs);
       if(!hash_search(hindef, (void *)disc)){//New disc!
-		countindef[aind]++;
-		hash_insert(hindef, (void *)disc, NULL);
-	  }
-	  if(a==b) continue;//If a=b, (a,-b) and (-a,b) give the same algebra.
-	  disc=ab_discu(a, -b, apdivs, bpdivs);
+        countindef[aind]++;
+        hash_insert(hindef, (void *)disc, NULL);
+      }
+      if(a==b) continue;//If a=b, (a,-b) and (-a,b) give the same algebra.
+      disc=ab_discu(a, -b, apdivs, bpdivs);
       if(!hash_search(hindef, (void *)disc)){//New disc!
-		countindef[aind]++;
-		hash_insert(hindef, (void *)disc, NULL);
-	  }
+        countindef[aind]++;
+        hash_insert(hindef, (void *)disc, NULL);
+      }
     }
   }
   GEN defalg=hash_keys(hdef);
@@ -341,12 +354,12 @@ GEN veccumu(GEN v){
   GEN w=cgetg_copy(v, &lg);
   if(lg==1) return w;//Empty
   if(typ(v)==t_VEC){
-	gel(w, 1)=gcopy(gel(v, 1));
-	for(long i=2;i<lg;i++) gel(w, i)=gadd(gel(v, i), gel(w, i-1));
+    gel(w, 1)=gcopy(gel(v, 1));
+    for(long i=2;i<lg;i++) gel(w, i)=gadd(gel(v, i), gel(w, i-1));
   }
   else{//Vecsmall
-	w[1]=v[1];
-	for(long i=2;i<lg;i++) w[i]=v[i]+w[i-1];
+    w[1]=v[1];
+    for(long i=2;i<lg;i++) w[i]=v[i]+w[i-1];
   }
   return w;
 }
@@ -362,25 +375,25 @@ void writevecs(GEN v, char *fname){
   char *fullfile=stack_sprintf("data/%s.dat", fname);
   FILE *f=fopen(fullfile, "w");//Now we have created the output file f.
   if(t==t_VECSMALL){
-	for(long i=1;i<lv;i++) pari_fprintf(f, "%d\n", v[i]);
+    for(long i=1;i<lv;i++) pari_fprintf(f, "%d\n", v[i]);
   }
   else{//Vector
-	t=typ(gel(v, 1));
-	if(t==t_VECSMALL){
-	  for(long i=1;i<lg(gel(v, 1));i++){
-		for(long j=1;j<lv-1;j++) pari_fprintf(f, "%d ", gel(v, j)[i]);
-		pari_fprintf(f, "%d\n", gel(v, lv-1)[i]);
-	  }
-	}
-	else if(t==t_VEC){
-	  for(long i=1;i<lg(gel(v, 1));i++){
-		for(long j=1;j<lv-1;j++) pari_fprintf(f, "%Ps ", gmael(v, j, i));
-		pari_fprintf(f, "%Ps\n", gmael(v, lv-1, i));
-	  }
-	}
-	else{
-	  for(long i=1;i<lv;i++) pari_fprintf(f, "%Ps\n", gel(v, i));
-	}
+    t=typ(gel(v, 1));
+    if(t==t_VECSMALL){
+      for(long i=1;i<lg(gel(v, 1));i++){
+        for(long j=1;j<lv-1;j++) pari_fprintf(f, "%d ", gel(v, j)[i]);
+        pari_fprintf(f, "%d\n", gel(v, lv-1)[i]);
+      }
+    }
+    else if(t==t_VEC){
+      for(long i=1;i<lg(gel(v, 1));i++){
+        for(long j=1;j<lv-1;j++) pari_fprintf(f, "%Ps ", gmael(v, j, i));
+        pari_fprintf(f, "%Ps\n", gmael(v, lv-1, i));
+      }
+    }
+    else{
+      for(long i=1;i<lv;i++) pari_fprintf(f, "%Ps\n", gel(v, i));
+    }
   }
   fclose(f);
 }

@@ -6,6 +6,7 @@ GEN alggetab(GEN A);
 GEN algnormdisc(GEN A);
 GEN algramifiedplacesf(GEN A);
 long hilbertss(long x, long y, ulong p);
+GEN vecsquarefreeu_split(ulong a, ulong b);
 
 //COUNTING ALGEBRAS
 GEN alg_count_alg(GEN disc, ulong N1, ulong N2);

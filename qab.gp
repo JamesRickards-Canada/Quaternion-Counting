@@ -16,7 +16,8 @@
 	addhelp(algramifiedplacesf,"Input A, an algebra.\n Returns the vector of finite places that ramify.");
 	install(hilbertss,"lLLU",,"./libqab.so");
 	addhelp(hilbertss,"Inputs x, y, p with p>0.\n Returns the Hilbert symbol (x, y)_p, where x and y are longs, and p is a ulong.");
-
+	install(vecsquarefreeu_split,"UU",,"./libqab.so");
+	addhelp(vecsquarefreeu_split,"Inputs a, b, positive integers.\n Returns [def, indef], vecsmalls of the squarefree integers between a and b, where the entries in def have odd numbers of prime factors, and indef have even numbers of prime factors.");
 
 \\COUNTING ALGEBRAS
 	install(alg_count_alg,"GUD0,U,",,"./libqab.so");
