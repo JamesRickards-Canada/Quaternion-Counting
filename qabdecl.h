@@ -8,7 +8,11 @@ GEN algramifiedplacesf(GEN A);
 long hilbertss(long x, long y, ulong p);
 
 //COUNTING ALGEBRAS
+GEN alg_count_alg(GEN disc, ulong N1, ulong N2);
+void alg_count_alg_tofile(GEN disc, ulong N1, ulong N2, char *fname);
+GEN alg_count_Q(ulong N);
+void alg_count_Q_append(ulong N, char *oldfname, char *newfname);
+void alg_count_Q_tofile(ulong N, char *fname);
 
-GEN alg_count_Q(ulong N, long prec);
-void alg_count_Q_append(ulong N, char *oldfname, char *newfname, long prec);
-void alg_count_Q_tofile(ulong N, char *fname, long prec);
+//OTHER METHODS
+GEN veccumu(GEN v);

@@ -19,12 +19,20 @@
 
 
 \\COUNTING ALGEBRAS
-	install(alg_count_Q,"Up",,"./libqab.so");
+	install(alg_count_alg,"GUD0,U,",,"./libqab.so");
+	addhelp(alg_count_alg,"Inputs disc, N1, N2.\n Counts instances of the algebra with disc disc among N1<=|a|<=N2 and 1<=|b|<=|a|. We only count one of (a,b) and (b,a), and restrict to a,b being squarefree. We can also pass in disc as a Vec/Vecsmall of discriminants, and N2=0 means the range [1, N1].");
+	install(alg_count_alg_tofile,"vGUUs",,"./libqab.so");
+	addhelp(alg_count_alg_tofile,"Input discs, N1, N2, fname.\n Does alg_count_alg, and writes the results to data/fname.dat.");
+	install(alg_count_Q,"U",,"./libqab.so");
 	addhelp(alg_count_Q,"Input N, a postive integer.\n Counts the number of distinct algebras (a,b/Q) with max(|a|,|b|)<=N. Returns [defcount, indefcount], where each entry is a length N vecsmall, the ith entry representing the number of algebras with max(|a|,|b|)=N.");
-	install(alg_count_Q_append,"vUssp",,"./libqab.so");
+	install(alg_count_Q_append,"vUss",,"./libqab.so");
 	addhelp(alg_count_Q_append,"Inputs N, oldfname, newfname.\n Does alg_count_Q, finding and writing [founddef, foundindef, countdef, countindef] to the file data/newfname.dat. We assume that the file data/oldfname.dat already includes partial computations, i.e. for a smaller N.");
-	install(alg_count_Q_tofile,"vUsp",,"./libqab.so");
+	install(alg_count_Q_tofile,"vUs",,"./libqab.so");
 	addhelp(alg_count_Q_tofile,"Inputs N, fname.\n Does alg_count_Q, finding and writing [founddef, foundindef, countdef, countindef] to the file data/fname.dat.");
+
+\\OTHER METHODS
+	install(veccumu,"G",,"./libqab.so");
+	addhelp(veccumu,"Input v, a vector/vecsmall.\n Returns w, where w[i]=v[1]+v[2]+...+v[i].");
 
 \\VISUAL
 	\\Files from another project, just comment them out if needed

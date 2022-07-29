@@ -16,7 +16,8 @@
 //STATIC DECLARATIONS
 static ulong ab_discu(long a, long b, GEN apdivs, GEN bpdivs);
 static int gomel(long t);
-static GEN alg_count_Q_hash(GEN founddef, GEN foundindef, ulong N1, ulong N2, long prec);
+static GEN alg_count_alg_worker(GEN disc, ulong N1, ulong N2);
+static GEN alg_count_Q_hash(GEN founddef, GEN foundindef, ulong N1, ulong N2);
 
 //FUNCTIONS
 
@@ -187,16 +188,70 @@ long hilbertss(long x, long y, ulong p){
 
 //COUNTING ALGEBRAS
 
+//Counts instances of the algebra with disc disc among N1<=|a|<=N2 and |b|<=|a|. We only count one of (a,b) and (b,a), and restrict to a,b being squarefree. We can also pass in a set of discriminants as a Vec/Vecsmall.
+GEN alg_count_alg(GEN disc, ulong N1, ulong N2){
+  pari_sp top=avma;
+  if(N2==0){N2=N1;N1=1;}
+  return gerepilecopy(top, alg_count_alg_worker(disc, N1, N2));
+}
 
+//alg_count_alg, with writing to a file.
+void alg_count_alg_tofile(GEN disc, ulong N1, ulong N2, char *fname){
+  pari_sp top=avma;
+  if(!pari_is_dir("data")){
+    int s=system("mkdir -p data");
+    if(s==-1) pari_err(e_MISC, "ERROR CREATING DIRECTORY data");
+  }
+  char *fullfile=stack_sprintf("data/%s.dat", fname);
+  FILE *f=fopen(fullfile, "w");//Now we have created the output file f.
+  GEN dat=alg_count_alg_worker(disc, N1, N2);
+  if(typ(dat)==t_VECSMALL) pari_fprintf(f, "%Ps\n", dat);
+  else for(long i=1;i<lg(dat);i++) pari_fprintf(f, "%Ps\n", gel(dat, i));
+  fclose(f);
+  set_avma(top);
+}
+
+//Counts instances of the algebra with disc disc among |a|,|b|<=N. We only count one of (a,b) and (b,a), and restrict to a,b being squarefree. We can also pass in a set of discriminants as a Vec/Vecsmall. NOT stack clean.
+static GEN alg_count_alg_worker(GEN disc, ulong N1, ulong N2){
+  int isvec=1;
+  long t=typ(disc);
+  if(t==t_INT){isvec=0;disc=mkvecsmall(itos(disc));}
+  else if(t==t_VEC) disc=gtovecsmall(disc);
+  ulong lgdisc=lg(disc), lN=N2-N1+1, aind=0;
+  GEN countset=cgetg(lgdisc, t_VEC);
+  for(long i=1;i<lgdisc;i++) gel(countset, i)=zero_zv(lN);
+  GEN facts=vecfactorsquarefreeu(1, N2);//Find prime divisors of all numbers between 1 and N.
+  for(long a=N1;a<=N2;a++){
+	aind++;
+    if(a%100==0) pari_printf("a=%d done\n", a);
+    GEN apdivs=gel(facts, a);
+    if(!apdivs) continue;//WLOG squarefree
+    for(long b=1;b<=a;b++){
+	  GEN bpdivs=gel(facts, b);
+	  if(!bpdivs) continue;//WLOG squarefree
+      ulong foundd=ab_discu(-a, -b, apdivs, bpdivs);
+	  for(long i=1;i<lgdisc;i++){if(foundd==disc[i]){gel(countset, i)[aind]++;break;}}
+      foundd=ab_discu(a, -b, apdivs, bpdivs);
+      for(long i=1;i<lgdisc;i++){if(foundd==disc[i]){gel(countset, i)[aind]++;break;}}
+	  foundd=ab_discu(a, b, apdivs, bpdivs);
+	  for(long i=1;i<lgdisc;i++){if(foundd==disc[i]){gel(countset, i)[aind]++;break;}}
+	  if(a==b) continue;
+	  foundd=ab_discu(-a, b, apdivs, bpdivs);
+	  for(long i=1;i<lgdisc;i++){if(foundd==disc[i]){gel(countset, i)[aind]++;break;}}
+    }
+  }
+  if(!isvec) return gel(countset, 1);
+  return countset;
+}
 
 //Counts the number of new and distinct algebras (a,b/Q) with N1<=max(|a|,|b|)<=N2. Returns [founddef, foundindef, defcount, indefcount], where the last two entries are length N2-N1+1 vecsmalls, the ith entry representing the number of algebras with max(|a|,|b|)=N1+i-1. This is not stack clean.
-static GEN alg_count_Q_hash(GEN founddef, GEN foundindef, ulong N1, ulong N2, long prec){
+static GEN alg_count_Q_hash(GEN founddef, GEN foundindef, ulong N1, ulong N2){
   long lN=N2-N1+1;//Tracks the number of algebras found as Vecsmalls
   hashtable *hdef=hash_create_ulong(100, 1);//Make the hashtable using the stack. For definite discriminants
   hashtable *hindef=hash_create_ulong(100, 1);//For indefinite discriminants
   for(long i=1;i<lg(founddef);i++) hash_insert(hdef, (void *)founddef[i], NULL);//Inserting the found discriminants into our hash
   for(long i=1;i<lg(foundindef);i++) hash_insert(hindef, (void *)foundindef[i], NULL);
-  GEN facts=vecfactorsquarefreeu(1, N2);//Find prime divisors of all numbers between N1 and N2.
+  GEN facts=vecfactorsquarefreeu(1, N2);//Find prime divisors of all numbers between 1 and N2.
   GEN countdef=zero_zv(lN), countindef=zero_zv(lN);//Number of new algebras for each N1<=n<=N2
   long aind=0;
   for(long a=N1;a<=N2;a++){//we do -a first, then a
@@ -238,18 +293,18 @@ static GEN alg_count_Q_hash(GEN founddef, GEN foundindef, ulong N1, ulong N2, lo
 }
 
 //Counts the number of distinct algebras (a,b/Q) with max(|a|,|b|)<=N. Returns [defcount, indefcount], where each entry is a length N vecsmall, the ith entry representing the number of algebras with max(|a|,|b|)=N.
-GEN alg_count_Q(ulong N, long prec){
+GEN alg_count_Q(ulong N){
   pari_sp top=avma;
-  GEN dat=alg_count_Q_hash(cgetg(1, t_VECSMALL), cgetg(1, t_VECSMALL), 1, N, prec);
+  GEN dat=alg_count_Q_hash(cgetg(1, t_VECSMALL), cgetg(1, t_VECSMALL), 1, N);
   return gerepilecopy(top, mkvec2(gel(dat, 3), gel(dat, 4)));
 }
 
 //Takes the partial results from alg_count_Q_tofile, and computes alg_count_Q with the new N using this already found input.
-void alg_count_Q_append(ulong N, char *oldfname, char *newfname, long prec){
+void alg_count_Q_append(ulong N, char *oldfname, char *newfname){
   pari_sp top=avma;
   char *fullfile1=stack_sprintf("data/%s.dat", oldfname);
   GEN olddata=gp_readvec_file(fullfile1);
-  GEN newdata=alg_count_Q_hash(gel(olddata, 2), gel(olddata, 3), itos(gel(olddata, 1))+1, N, prec);
+  GEN newdata=alg_count_Q_hash(gel(olddata, 2), gel(olddata, 3), itos(gel(olddata, 1))+1, N);
   GEN defcount=shallowconcat(gel(olddata, 4), gel(newdata, 3));
   GEN indefcount=shallowconcat(gel(olddata, 5), gel(newdata, 4));
   char *fullfile2=stack_sprintf("data/%s.dat", newfname);
@@ -260,7 +315,7 @@ void alg_count_Q_append(ulong N, char *oldfname, char *newfname, long prec){
 }
 
 //Does alg_count_Q, with also presenting the results to the file data/fname.dat.
-void alg_count_Q_tofile(ulong N, char *fname, long prec){
+void alg_count_Q_tofile(ulong N, char *fname){
   pari_sp top=avma;
   if(!pari_is_dir("data")){
     int s=system("mkdir -p data");
@@ -268,7 +323,7 @@ void alg_count_Q_tofile(ulong N, char *fname, long prec){
   }
   char *fullfile=stack_sprintf("data/%s.dat", fname);
   FILE *f=fopen(fullfile, "w");//Now we have created the output file f.
-  GEN dat=alg_count_Q_hash(cgetg(1, t_VECSMALL), cgetg(1, t_VECSMALL), 1, N, prec);
+  GEN dat=alg_count_Q_hash(cgetg(1, t_VECSMALL), cgetg(1, t_VECSMALL), 1, N);
   pari_fprintf(f, "%d\n%Ps\n%Ps\n%Ps\n%Ps\n", N, gel(dat, 1), gel(dat, 2), gel(dat, 3), gel(dat, 4));
   fclose(f);
   set_avma(top);
@@ -276,8 +331,22 @@ void alg_count_Q_tofile(ulong N, char *fname, long prec){
 
 
 
-//Returns a better pair (a, b).
-//GEN algbetterab_Q(GEN ab){
-  //pari_sp top=avma;
-  //GEN a=gel(ab, 1), b=gel(ab, 2);
-//}
+
+
+//OTHER METHODS
+
+//Given v, returns a vector/vecsmall w (same type as v) where w[i]=v[1]+v[2]+...+v[i].
+GEN veccumu(GEN v){
+  long lg;
+  GEN w=cgetg_copy(v, &lg);
+  if(lg==1) return w;//Empty
+  if(typ(v)==t_VEC){
+	gel(w, 1)=gcopy(gel(v, 1));
+	for(long i=2;i<lg;i++) gel(w, i)=gadd(gel(v, i), gel(w, i-1));
+  }
+  else{//Vecsmall
+	w[1]=v[1];
+	for(long i=2;i<lg;i++) w[i]=v[i]+w[i-1];
+  }
+  return w;
+}
