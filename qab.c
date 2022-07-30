@@ -8,6 +8,8 @@
 #include <pari/pari.h>
 #endif
 
+#include "pari/paripriv.h"
+
 #ifndef METHDECL
 #define METHDECL
 #include "qabdecl.h"
@@ -18,6 +20,7 @@ static ulong ab_discu(long a, long b, GEN apdivs, GEN bpdivs);
 static int gomel(long t);
 static GEN alg_count_alg_worker(GEN disc, ulong N1, ulong N2);
 static GEN alg_count_Q_hash(GEN founddef, GEN foundindef, ulong N1, ulong N2);
+static int gp_read_stream_buf(FILE *fi, Buffer *b);
 
 //FUNCTIONS
 
@@ -315,14 +318,41 @@ GEN alg_count_Q(ulong N){
 //Takes the partial results from alg_count_Q_tofile, and computes alg_count_Q with the new N using this already found input.
 void alg_count_Q_append(ulong N, char *oldfname, char *newfname){
   pari_sp top=avma;
-  char *fullfile1=stack_sprintf("data/%s.dat", oldfname);
-  GEN olddata=gp_readvec_file(fullfile1);
-  GEN newdata=alg_count_Q_hash(gel(olddata, 2), gel(olddata, 3), itos(gel(olddata, 1))+1, N);
-  GEN defcount=shallowconcat(gel(olddata, 4), gel(newdata, 3));
-  GEN indefcount=shallowconcat(gel(olddata, 5), gel(newdata, 4));
-  char *fullfile2=stack_sprintf("data/%s.dat", newfname);
-  FILE *f=fopen(fullfile2, "w");
-  pari_fprintf(f, "%d\n%Ps\n%Ps\n%Ps\n%Ps\n", N, gel(newdata, 1), gel(newdata, 2), defcount, indefcount);
+  char *fullfile1=stack_sprintf("data/%s_defalg.dat", oldfname);
+  FILE *f=fopen(fullfile1, "r");
+  GEN olddefalg=readvecsmall(f);
+  fclose(f);
+  char *fullfile2=stack_sprintf("data/%s_indefalg.dat", oldfname);
+  f=fopen(fullfile2, "r");
+  GEN oldindefalg=readvecsmall(f);
+  fclose(f);
+  char *fullfile3=stack_sprintf("data/%s_defcount.dat", oldfname);
+  f=fopen(fullfile3, "r");
+  GEN olddefcount=readvecsmall(f);
+  fclose(f);
+  char *fullfile4=stack_sprintf("data/%s_indefcount.dat", oldfname);
+  f=fopen(fullfile4, "r");
+  GEN oldindefcount=readvecsmall(f);
+  fclose(f);
+  GEN newdata=alg_count_Q_hash(olddefalg, oldindefalg, lg(olddefcount), N);
+  GEN defcount=shallowconcat(olddefcount, gel(newdata, 3));
+  GEN indefcount=shallowconcat(oldindefcount, gel(newdata, 4));
+  
+  char *fullfile5=stack_sprintf("data/%s_defalg.dat", newfname);
+  f=fopen(fullfile5, "w");
+  for(long i=1;i<lg(gel(newdata, 1));i++) pari_fprintf(f, "%d\n", gel(newdata, 1)[i]);//Write out the definite algebras
+  fclose(f);
+  char *fullfile6=stack_sprintf("data/%s_indefalg.dat", newfname);
+  f=fopen(fullfile6, "w");
+  for(long i=1;i<lg(gel(newdata, 2));i++) pari_fprintf(f, "%d\n", gel(newdata, 2)[i]);//Write out the indefinite algebras
+  fclose(f);
+  char *fullfile7=stack_sprintf("data/%s_defcount.dat", newfname);
+  f=fopen(fullfile7, "w");
+  for(long i=1;i<lg(defcount);i++) pari_fprintf(f, "%d\n", defcount[i]);//Write out the definite counts
+  fclose(f);
+  char *fullfile8=stack_sprintf("data/%s_indefcount.dat", newfname);
+  f=fopen(fullfile8, "w");
+  for(long i=1;i<lg(indefcount);i++) pari_fprintf(f, "%d\n", indefcount[i]);//Write out the indefinite counts
   fclose(f);
   set_avma(top);
 }
@@ -334,10 +364,22 @@ void alg_count_Q_tofile(ulong N, char *fname){
     int s=system("mkdir -p data");
     if(s==-1) pari_err(e_MISC, "ERROR CREATING DIRECTORY data");
   }
-  char *fullfile=stack_sprintf("data/%s.dat", fname);
-  FILE *f=fopen(fullfile, "w");//Now we have created the output file f.
   GEN dat=alg_count_Q_hash(cgetg(1, t_VECSMALL), cgetg(1, t_VECSMALL), 1, N);
-  pari_fprintf(f, "%d\n%Ps\n%Ps\n%Ps\n%Ps\n", N, gel(dat, 1), gel(dat, 2), gel(dat, 3), gel(dat, 4));
+  char *fullfile1=stack_sprintf("data/%s_defalg.dat", fname);
+  FILE *f=fopen(fullfile1, "w");//Now we have created the output file f.
+  for(long i=1;i<lg(gel(dat, 1));i++) pari_fprintf(f, "%d\n", gel(dat, 1)[i]);//Write out the definite algebras
+  fclose(f);
+  char *fullfile2=stack_sprintf("data/%s_indefalg.dat", fname);
+  f=fopen(fullfile2, "w");
+  for(long i=1;i<lg(gel(dat, 2));i++) pari_fprintf(f, "%d\n", gel(dat, 2)[i]);//Write out the indefinite algebras
+  fclose(f);
+  char *fullfile3=stack_sprintf("data/%s_defcount.dat", fname);
+  f=fopen(fullfile3, "w");
+  for(long i=1;i<lg(gel(dat, 3));i++) pari_fprintf(f, "%d\n", gel(dat, 3)[i]);//Write out the definite counts
+  fclose(f);
+  char *fullfile4=stack_sprintf("data/%s_indefcount.dat", fname);
+  f=fopen(fullfile4, "w");
+  for(long i=1;i<lg(gel(dat, 4));i++) pari_fprintf(f, "%d\n", gel(dat, 4)[i]);//Write out the indefinite counts
   fclose(f);
   set_avma(top);
 }
@@ -396,5 +438,37 @@ void writevecs(GEN v, char *fname){
     }
   }
   fclose(f);
+}
+
+//Copied from es.c, needed for readvecsmall
+static int gp_read_stream_buf(FILE *fi, Buffer *b){
+  input_method IM;
+  filtre_t F;
+  init_filtre(&F, b);
+  IM.file=(void*)fi;
+  IM.myfgets=(fgets_t)&fgets;
+  IM.getline=&file_input;
+  IM.free=0;
+  return input_loop(&F, &IM);
+}
+
+//Adapted from gp_readvec_stream in es.c
+GEN readvecsmall(FILE *fi){
+  pari_sp top=avma;
+  Buffer *b=new_buffer();
+  long i=1, n=16;
+  GEN z=cgetg(n+1, t_VECSMALL);
+  for(;;){
+    if(!gp_read_stream_buf(fi, b)) break;
+    if(!*(b->buf)) continue;
+    if(i>n){
+      n<<=1;
+      z=vecsmall_lengthen(z, n);
+    }
+    z[i++] = itos(readseq(b->buf));
+  }
+  setlg(z, i);
+  delete_buffer(b);
+  return gerepilecopy(top, z);
 }
 
