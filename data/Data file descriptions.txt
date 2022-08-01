@@ -1,0 +1,4 @@
+File names and details:
+
+140k_defcount: for each N<=140000, we computed the number of definite quaternion algebra isomorphism classes with max(|a|,|b|)=N where a,b are both squarefree. The Nth line of the file is the count for N (e.g. if N is not squarefree, it is 0).
+140k_indefcount: same as 140k_defcount, but for indefinite isomorphism classes
