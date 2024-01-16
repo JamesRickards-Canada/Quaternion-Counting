@@ -323,7 +323,7 @@ GEN tex_makecolours(int ncol){
 	}
   }
   else{
-    long prec=3;
+    long prec=DEFAULTPREC;
     GEN shift=rdivss(1, ncol, prec);//1/ncol
     GEN a=randomr(prec), b=randomr(prec), c=randomr(prec);
     gel(rvec, 1)=mkvec3(a, b, c);
